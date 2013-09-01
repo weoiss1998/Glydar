@@ -44,33 +44,10 @@ public class Glydar {
 					serverDebug = true;
 			}
 		}
-		s = new GServer(serverDebug);
 		//TODO: MAke this configurable in config
-		s.defaultWorld = new GWorld("Default", 12345);
-
-        File adminsFile = new File("admins.txt");
-        List<String> admins = new ArrayList<>();
-        if (!adminsFile.exists()) {
-            try {
-                adminsFile.createNewFile();
-            } catch (Exception e) {
-                s.getLogger().log(Level.SEVERE, "Could not create admins file.");
-            }
-        } else {
-            try {
-                Scanner scanner = new Scanner(adminsFile);
-                while (scanner.hasNext()) {
-                    String line = scanner.next();
-                    if (line == null || line.equals("")){
-                    } else {
-                        admins.add(line.trim());
-                    }
-                }
-            } catch (FileNotFoundException e) {
-                s.getLogger().log(Level.SEVERE, "Couldn't find admins file.");
-            }
-        }
-        s.setAdmins(admins);
+		s = new GServer(serverDebug, new GWorld("Default", 12345));
+		s.getAccountManager().loadAdminFile();
+		s.getAccountManager().loadAccountFile();
 
 		ParaGlydar.setServer(s);
 		ParaGlydar.setCreatorAPI(new GModelCreator(), new GDataCreator());

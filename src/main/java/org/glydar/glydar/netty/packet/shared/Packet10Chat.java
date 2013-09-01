@@ -64,6 +64,12 @@ public class Packet10Chat extends CubeWorldPacket {
 	@Override
 	public void receivedFrom(GPlayer ply) {
 		sender = ply;
+		if(Glydar.getServer().getAccountManager().manageCommands(ply, message)){
+			return;
+		}
+		if (!ply.getAccount().isVerified()){
+			return;
+		}
 		boolean isCmd = manageCommands(ply);
 		if (!isCmd) {
 			manageChatEvent(ply);

@@ -14,6 +14,7 @@ import org.glydar.glydar.netty.packet.CubeWorldPacket;
 import org.glydar.glydar.netty.packet.server.Packet15Seed;
 import org.glydar.glydar.netty.packet.shared.Packet0EntityUpdate;
 import org.glydar.glydar.netty.packet.shared.Packet10Chat;
+import org.glydar.glydar.security.Account;
 import org.glydar.paraglydar.models.Entity;
 import org.glydar.paraglydar.models.Player;
 import org.glydar.paraglydar.models.World;
@@ -21,12 +22,14 @@ import org.glydar.paraglydar.permissions.Permission;
 import org.glydar.paraglydar.permissions.PermissionAttachment;
 
 public class GPlayer extends GEntity implements Player {
-	public boolean joined = false;
+	private boolean connected = false;
+	private boolean joined = false;
 	private ChannelHandlerContext channelCtx;
-	private boolean admin;
+	private final Account account;
 
 	public GPlayer() {
 		super();
+		this.account = new Account(this);
 	}
 
 	public void setChannelContext(ChannelHandlerContext ctx) {
@@ -47,16 +50,37 @@ public class GPlayer extends GEntity implements Player {
 		ret.add(this);
 		return ret;
 	}
+	
+	public Account getAccount(){
+		return account;
+	}
 
+	public void playerConnected(){
+		connected = true;
+	}
+	
+	public boolean isConnected(){
+		return connected;
+	}
+	
+	public boolean isJoined(){
+		return joined;
+	}
+	
+	public void playerJoined(){
+		joined = true;
+	}
 
-	public void playerJoined() {
+	public void playerVerified() {
 		Glydar.getServer().addEntity(entityID, this);
-		this.joined = true;
+		account.setVerified(true);
 	}
 
 	public void playerLeft() {
 		Glydar.getServer().removeEntity(entityID);
+		world.removeEntity(entityID);
 		forceUpdateData();
+		channelCtx.close();
 	}
 
 	public String getIp() {
@@ -67,20 +91,14 @@ public class GPlayer extends GEntity implements Player {
 		this.sendPacket(new Packet10Chat(message, 0));
 	}
 
-	public void sendMessageToPlayer(String message) {
-		sendMessage(message);
-	}
-
 	public void kickPlayer(String message) {
 		sendMessage(message);
 		playerLeft();
-		channelCtx.close();
 	}
 
 	public void kickPlayer() {
 		sendMessage("You have been kicked!");
 		playerLeft();
-		channelCtx.close();
 	}
 	
 	@Override
@@ -120,9 +138,9 @@ public class GPlayer extends GEntity implements Player {
 				case FALSE:
 					return false;
 				case ADMIN:
-					return isAdmin();
+					return account.isAdmin();
 				case NON_ADMIN:
-					return (!isAdmin());
+					return (!account.isAdmin());
 			}
 		}
 		for (PermissionAttachment attachment : getAttachments()) {
@@ -139,15 +157,6 @@ public class GPlayer extends GEntity implements Player {
 
 	public void addAttachment(PermissionAttachment attachment) {
 		PermissionAttachment.addAttachment(attachment);
-	}
-
-	// TODO
-	public boolean isAdmin() {
-		return this.admin;
-	}
-
-	public void setAdmin(boolean admin) {
-		this.admin = admin;
 	}
 
 	@Override

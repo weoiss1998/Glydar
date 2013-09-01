@@ -11,6 +11,7 @@ import org.glydar.paraglydar.models.Player;
 import org.glydar.paraglydar.models.World;
 import org.glydar.paraglydar.permissions.Permission;
 import org.glydar.paraglydar.permissions.Permission.PermissionDefault;
+import org.glydar.glydar.security.AccountManager;
 import org.glydar.glydar.util.Versioning;
 
 import java.util.*;
@@ -25,22 +26,25 @@ public class GServer implements Runnable, Server {
 	
 	private final EventManager eventManager;
 	private final CommandManager commandManager;
+	private final AccountManager accountManager;
 	
 	private HashMap<Long, Entity> connectedEntities = new HashMap<Long, Entity>();
 	private HashMap<Long, World> serverWorlds = new HashMap<Long, World>();
-	protected World defaultWorld;
+	private final World defaultWorld;
 	
 	private final String serverName = "Glydar";
 	private final String serverVersion = Versioning.getParaGlydarVersion();
 	private Thread commandReader;
     private List<String> admins = new ArrayList<>();
 
-    public GServer(boolean debug) {
+    public GServer(boolean debug, World w) {
 		this.DEBUG = debug;
 		this.logManager = new ConsoleLogManager(Glydar.class.getName());
 		this.eventManager = new EventManager(logManager.getLogger());
 		this.commandManager = new CommandManager(logManager.getLogger());
-
+		this.accountManager = new AccountManager(this);
+		this.defaultWorld = w;
+		
 		this.init();
 	}
 
@@ -57,6 +61,10 @@ public class GServer implements Runnable, Server {
 	
 	public CommandManager getCommandManager() {
 		return commandManager;
+	}
+	
+	public AccountManager getAccountManager() {
+		return accountManager;
 	}
 
 	public String getName() {
@@ -138,7 +146,7 @@ public class GServer implements Runnable, Server {
 	public void broadcast(String message, Permission permission) {
 		for (Player player : this.getConnectedPlayers()) {
 			if (player.hasPermission(permission)) {
-				player.sendMessageToPlayer(message);
+				player.sendMessage(message);
 			}
 		}
 	}
@@ -163,7 +171,7 @@ public class GServer implements Runnable, Server {
         return admins;
     }
 
-    protected void setAdmins(List<String> admins) {
+    public void setAdmins(List<String> admins) {
         this.admins = admins;
     }
 
@@ -190,4 +198,5 @@ public class GServer implements Runnable, Server {
 		}
 		getLogger().info("Goodbye!");
 	}
+
 }

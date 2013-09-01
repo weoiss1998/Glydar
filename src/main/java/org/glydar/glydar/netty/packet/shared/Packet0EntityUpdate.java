@@ -87,11 +87,16 @@ public class Packet0EntityUpdate extends CubeWorldPacket {
 
 	@Override
 	public void receivedFrom(GPlayer ply) {
-		if (!ply.joined) {
+		if (!ply.isConnected()) {
 			//TODO: Temporary, make a proper constant!
 			GEntityData.FULL_BITMASK = ed.getBitSet();
 			ply.setEntityData(this.ed);
-
+			
+			ply.sendMessage("Welcome! If you have an account, do /login [password]");
+			ply.sendMessage("If you are new to this server, do /register [password] to create a new account and play.");
+			ply.sendMessage("If you would like to know more about the accounts system, do /accounts");
+		}
+		if (ply.getAccount().isVerified() && !ply.isJoined()){
 			//TODO: Add more functionality to join message!
 			String joinMessage = manageJoinEvent(ply);
 
@@ -104,9 +109,14 @@ public class Packet0EntityUpdate extends CubeWorldPacket {
 			}
 			ply.playerJoined();
 		}
-		manageEntityEvents(ply);
-		((GEntityData) ply.getEntityData()).updateFrom(this.ed);
-		this.sendTo(target);
+		if (ply.getAccount().isVerified()){
+			manageEntityEvents(ply);
+			((GEntityData) ply.getEntityData()).updateFrom(this.ed);
+			this.sendTo(target);
+		} else {
+			((GEntityData) ply.getEntityData()).updateFrom(this.ed);
+			this.sendTo(ply);
+		}
 	}
 
 	@Override
